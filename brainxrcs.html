@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BrainxRCS — Brain Repo/Config Service</title>
+  <meta name="description" content="BrainxRCS - lightweight repo/config service UI demo">
+  <style>
+    :root{--accent:#6c63ff;--bg:#f7f7fb;--card:#fff;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0;background:var(--bg);color:#111}
+    header{background:linear-gradient(90deg, #fff,#f0f0ff);padding:2rem 1rem;box-shadow:0 1px 0 rgba(0,0,0,0.04)}
+    .container{max-width:900px;margin:0 auto}
+    h1{margin:0 0 0.5rem;font-size:1.5rem}
+    p.lead{margin:0;color:var(--muted)}
+    main{padding:2rem 1rem}
+    .grid{display:grid;grid-template-columns:2fr 1fr;gap:1rem}
+    .card{background:var(--card);padding:1rem;border-radius:8px;box-shadow:0 6px 18px rgba(17,24,39,0.06)}
+    .small{font-size:0.9rem;color:var(--muted)}
+    pre{background:#0b1220;color:#dfe7ff;padding:0.75rem;border-radius:6px;overflow:auto}
+    footer{padding:1rem;text-align:center;color:var(--muted);font-size:0.9rem}
+    @media (max-width:720px){.grid{grid-template-columns:1fr}}
+    .btn{display:inline-block;padding:0.5rem 0.9rem;background:var(--accent);color:#fff;border-radius:6px;text-decoration:none}
+    .meta{display:flex;gap:0.5rem;flex-wrap:wrap}
+    .meta strong{color:#111}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>BrainxRCS</h1>
+      <p class="lead">A minimal HTML demo for a Brain Repo/Config Service (BrainxRCS)</p>
+    </div>
+  </header>
+  <main>
+    <div class="container grid">
+      <section class="card">
+        <h2>About</h2>
+        <p class="small">BrainxRCS is a conceptual UI for managing repository-like configs and quick snippets. This file is a simple static demo you can open locally.</p>
+
+        <h3>Quick start</h3>
+        <ol>
+          <li>Save this file as <code>brainxrcs.html</code> in your project.</li>
+          <li>Open it in your browser to view the demo.</li>
+        </ol>
+
+        <h3>Example config</h3>
+        <pre>{
+  "name": "brainxrcs",
+  "version": "0.1.0",
+  "features": ["snapshots","apply","diff"]
+}</pre>
+
+        <p class="small">Want a custom theme or interactivity? Tell me what you need and I can extend it.</p>
+      </section>
+
+      <aside class="card">
+        <h3>Commands</h3>
+        <div class="meta">
+          <div><strong>Open</strong></div>
+          <div class="small">Double-click or use your editor's preview</div>
+        </div>
+
+        <p class="small">Or run <code>bash ./serve.sh 8000</code> and open <code>http://&lt;HOST_IP&gt;:8000/brainxrcs.html</code> — see <a href="ACCESS.md">ACCESS.md</a> for details.</p>
+
+        <h3 style="margin-top:1rem">Embed</h3>
+        <p class="small">Drop into any static site or add to your project's docs folder.</p>
+
+        <a href="#" class="btn">View Source</a>
+      </aside>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">Made with ✨ — BrainxRCS demo</div>
+  </footer>
+</body>
+</html>
