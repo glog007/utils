@@ -1,78 +1,363 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>BrainxRCS — Brain Repo/Config Service</title>
-  <meta name="description" content="BrainxRCS - lightweight repo/config service UI demo">
-  <style>
-    :root{--accent:#6c63ff;--bg:#f7f7fb;--card:#fff;--muted:#6b7280}
-    *{box-sizing:border-box}
-    body{font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0;background:var(--bg);color:#111}
-    header{background:linear-gradient(90deg, #fff,#f0f0ff);padding:2rem 1rem;box-shadow:0 1px 0 rgba(0,0,0,0.04)}
-    .container{max-width:900px;margin:0 auto}
-    h1{margin:0 0 0.5rem;font-size:1.5rem}
-    p.lead{margin:0;color:var(--muted)}
-    main{padding:2rem 1rem}
-    .grid{display:grid;grid-template-columns:2fr 1fr;gap:1rem}
-    .card{background:var(--card);padding:1rem;border-radius:8px;box-shadow:0 6px 18px rgba(17,24,39,0.06)}
-    .small{font-size:0.9rem;color:var(--muted)}
-    pre{background:#0b1220;color:#dfe7ff;padding:0.75rem;border-radius:6px;overflow:auto}
-    footer{padding:1rem;text-align:center;color:var(--muted);font-size:0.9rem}
-    @media (max-width:720px){.grid{grid-template-columns:1fr}}
-    .btn{display:inline-block;padding:0.5rem 0.9rem;background:var(--accent);color:#fff;border-radius:6px;text-decoration:none}
-    .meta{display:flex;gap:0.5rem;flex-wrap:wrap}
-    .meta strong{color:#111}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brainwave Entrainment Studio (Big Visuals)</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; background: #f0f2f5; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+        h1 { margin-top: 0; color: #1a1a1a; font-size: 28px; text-align: center; margin-bottom: 25px;}
+        
+        .control-group { margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e9ecef; }
+        
+        label { font-weight: 700; display: block; margin-bottom: 8px; color: #495057; font-size: 0.95rem; }
+        .desc { font-size: 0.85em; color: #6c757d; margin-top: -5px; margin-bottom: 12px; display: block; }
+        
+        select, input[type=range], input[type=number] { width: 100%; padding: 12px; border: 2px solid #dee2e6; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        input[type=range] { padding: 0; cursor: pointer; }
+        
+        /* BIG VISUALIZER CANVAS */
+        .visualizer-container {
+            background: #111;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+            border: 1px solid #333;
+            text-align: center;
+        }
+        canvas {
+            width: 100%;
+            height: 300px; /* Much taller */
+            display: block;
+        }
+
+        /* Info Box */
+        .info-box { background-color: #e3f2fd; border-left: 5px solid #2196f3; padding: 15px; margin-top: 15px; border-radius: 4px; display: none; }
+        .info-title { font-weight: bold; color: #0d47a1; display: block; margin-bottom: 5px; }
+        .info-text { font-size: 0.9em; line-height: 1.5; color: #1565c0; }
+
+        /* Inputs */
+        .checkbox-wrapper { display: flex; align-items: center; gap: 10px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #dee2e6; margin-top: 15px; }
+        .checkbox-wrapper input { width: 22px; height: 22px; }
+        .checkbox-wrapper label { margin: 0; color: #333; cursor: pointer; font-size: 1rem; }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 10px; }
+        button { flex: 1; padding: 18px; font-size: 18px; font-weight: 700; cursor: pointer; border: none; border-radius: 8px; transition: transform 0.1s; text-transform: uppercase; letter-spacing: 0.5px; }
+        button:active { transform: scale(0.98); }
+        button#playBtn { background: linear-gradient(135deg, #28a745, #218838); color: white; }
+        button.stop { background: linear-gradient(135deg, #dc3545, #c82333); color: white; }
+
+        .radio-group { display: flex; gap: 10px; }
+        .radio-option { flex: 1; position: relative; }
+        .radio-option input { opacity: 0; position: absolute; width: 100%; height: 100%; cursor: pointer; }
+        .radio-option div { padding: 15px; text-align: center; background: #fff; border: 2px solid #dee2e6; border-radius: 6px; font-weight: 600; color: #6c757d; transition: all 0.2s; font-size: 1.1rem; }
+        .radio-option input:checked + div { border-color: #007bff; background: #e7f1ff; color: #0056b3; }
+        
+        .advanced-toggle { text-align: center; cursor: pointer; color: #6c757d; font-size: 0.9em; margin-top: 10px; text-decoration: underline; }
+        .advanced-panel { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6; }
+        .advanced-panel.show { display: block; }
+        .value-display { float: right; font-weight: normal; color: #007bff; font-family: monospace; }
+        
+        #live-status { margin-top: 20px; padding: 15px; background: #2c3e50; color: #00ff9d; border-radius: 8px; font-family: monospace; text-align: center; display: none; font-size: 1.2rem; }
+    </style>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <h1>BrainxRCS</h1>
-      <p class="lead">A minimal HTML demo for a Brain Repo/Config Service (BrainxRCS)</p>
+
+<div class="container">
+    <h1>🧠 Brainwave Entrainment Studio</h1>
+
+    <div class="control-group">
+        <label>1. Output Device</label>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" name="device" value="headphones" checked onchange="updateUI()">
+                <div>🎧 Headphones</div>
+            </div>
+            <div class="radio-option">
+                <input type="radio" name="device" value="speakers" onchange="updateUI()">
+                <div>🔊 Speakers</div>
+            </div>
+        </div>
+        <p id="mode-desc" style="font-size: 0.9em; color: #d9534f; margin-top: 10px; display:none; text-align: center; font-weight: 600;">
+            * Speakers Mode activates "Pulse" beats. Best for physical exercise!
+        </p>
     </div>
-  </header>
-  <main>
-    <div class="container grid">
-      <section class="card">
-        <h2>About</h2>
-        <p class="small">BrainxRCS is a conceptual UI for managing repository-like configs and quick snippets. This file is a simple static demo you can open locally.</p>
 
-        <h3>Quick start</h3>
-        <ol>
-          <li>Save this file as <code>brainxrcs.html</code> in your project.</li>
-          <li>Open it in your browser to view the demo.</li>
-        </ol>
+    <div class="control-group">
+        <label>2. Therapeutic Goal & Target Zone</label>
+        <select id="brainwaveState" onchange="updateInfoDisplay()">
+            <optgroup label="Healing & Sleep (Delta/Theta)">
+                <option value="2">Delta (2 Hz) - Deep Sleep | Rx: Insomnia & Pain</option>
+                <option value="6">Theta (6 Hz) - Meditation | Rx: Anxiety & Stress</option>
+            </optgroup>
+            <optgroup label="Focus & Learning (Alpha/Beta)">
+                <option value="10">Alpha (10 Hz) - Relaxed Focus | Rx: ADHD & Learning</option>
+                <option value="14">Beta (14 Hz) - Active Thinking | Rx: Fatigue & Fog</option>
+            </optgroup>
+            <optgroup label="Peak Performance (Gamma)">
+                <option value="40">Gamma (40 Hz) - Peak Power | Rx: Memory & Cognition</option>
+            </optgroup>
+        </select>
 
-        <h3>Example config</h3>
-        <pre>{
-  "name": "brainxrcs",
-  "version": "0.1.0",
-  "features": ["snapshots","apply","diff"]
-}</pre>
-
-        <p class="small">Want a custom theme or interactivity? Tell me what you need and I can extend it.</p>
-      </section>
-
-      <aside class="card">
-        <h3>Commands</h3>
-        <div class="meta">
-          <div><strong>Open</strong></div>
-          <div class="small">Double-click or use your editor's preview</div>
+        <div id="infoBox" class="info-box">
+            <span id="infoTitle" class="info-title"></span>
+            <span id="infoText" class="info-text"></span>
         </div>
 
-        <p class="small">Or run <code>bash ./serve.sh 8000</code> and open <code>http://&lt;HOST_IP&gt;:8000/brainxrcs.html</code> — see <a href="ACCESS.md">ACCESS.md</a> for details.</p>
-
-        <h3 style="margin-top:1rem">Embed</h3>
-        <p class="small">Drop into any static site or add to your project's docs folder.</p>
-
-        <a href="#" class="btn">View Source</a>
-      </aside>
+        <div class="checkbox-wrapper">
+            <input type="checkbox" id="hillClimb" onchange="toggleHillClimbUI()">
+            <label for="hillClimb">⛰️ <b>Hill Climb Mode</b> (Variable Intensity)</label>
+        </div>
     </div>
-  </main>
 
-  <footer>
-    <div class="container">Made with ✨ — BrainxRCS demo</div>
-  </footer>
+    <div class="control-group" style="padding: 0; background: transparent; border: none;">
+        <label style="margin-bottom: 5px;">Live Wave Monitor</label>
+        <div class="visualizer-container">
+            <canvas id="visualizer" width="800" height="300"></canvas>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label>4. Duration <span id="timeLeft" style="float:right; color:#dc3545;"></span></label>
+        <select id="timer">
+            <option value="0">∞ No Limit</option>
+            <option value="5">5 Minutes</option>
+            <option value="10">10 Minutes</option>
+            <option value="15">15 Minutes</option>
+            <option value="30">30 Minutes</option>
+            <option value="45">45 Minutes</option>
+            <option value="60">60 Minutes</option>
+        </select>
+    </div>
+
+    <div class="control-group" style="padding-bottom: 10px;">
+        <div class="advanced-toggle" onclick="toggleAdvanced()">⚙️ Advanced Audio Settings</div>
+        <div id="advancedPanel" class="advanced-panel">
+            <label>Carrier Pitch <span id="freqDisplay" class="value-display">150 Hz</span></label>
+            <input type="range" id="carrierFreq" min="50" max="900" step="10" value="150" oninput="updateFreqDisplay()">
+            <br><br>
+            <label>Wave Shape</label>
+            <select id="waveform">
+                <option value="sine">Sine (Smooth)</option>
+                <option value="square">Square (Hard Pulse)</option>
+                <option value="sawtooth">Sawtooth (Sharp)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label>Master Volume</label>
+        <input type="range" id="volume" min="0" max="0.5" step="0.01" value="0.1">
+    </div>
+
+    <div id="live-status">
+        Current Pace: <span id="currentHz" style="font-weight:bold;">0 Hz</span>
+        <div id="climbStatus" style="font-size: 0.8em; color: #aaa; margin-top:5px;"></div>
+    </div>
+
+    <div class="btn-group">
+        <button id="playBtn" onclick="startEntrainment()">▶ Start Therapy</button>
+        <button class="stop" onclick="stopEntrainment()">■ Stop</button>
+    </div>
+</div>
+
+<script>
+    const benefitsData = {
+        "2": { title: "Delta Waves (Healing)", text: "Triggers HGH release, deep restorative sleep, and physical healing. <br><b>Treats:</b> Insomnia, pain, immune recovery." },
+        "6": { title: "Theta Waves (Relaxation)", text: "Access to subconscious, deep meditation, and creativity. <br><b>Treats:</b> Anxiety, stress, emotional trauma." },
+        "10": { title: "Alpha Waves (Flow)", text: "'The Zone' state. Calm alertness. <br><b>Treats:</b> ADHD, study stress, lack of flow." },
+        "14": { title: "Beta Waves (Focus)", text: "Analytical problem solving and logic. <br><b>Treats:</b> Brain fog, fatigue." },
+        "40": { title: "Gamma Waves (Cognition)", text: "Memory recall and peak coordination. <br><b>Treats:</b> Cognitive decline, memory issues." }
+    };
+
+    let audioCtx, analyser;
+    let osc1, osc2, lfo, lfoAmp;
+    let masterGain;
+    let isPlaying = false;
+    let timerInterval, hillInterval, drawVisual;
+    let baseBeatFreq = 0;
+    
+    // Canvas Setup
+    const canvas = document.getElementById("visualizer");
+    const canvasCtx = canvas.getContext("2d");
+
+    function toggleAdvanced() { document.getElementById('advancedPanel').classList.toggle('show'); }
+    function updateFreqDisplay() { document.getElementById('freqDisplay').innerText = document.getElementById('carrierFreq').value + " Hz"; }
+    function updateUI() {
+        const mode = document.querySelector('input[name="device"]:checked').value;
+        document.getElementById('mode-desc').style.display = (mode === 'speakers') ? 'block' : 'none';
+        autoConfigure();
+    }
+
+    function updateInfoDisplay() {
+        const val = document.getElementById('brainwaveState').value;
+        const box = document.getElementById('infoBox');
+        if (benefitsData[val]) {
+            box.style.display = "block";
+            document.getElementById('infoTitle').innerHTML = benefitsData[val].title;
+            document.getElementById('infoText').innerHTML = benefitsData[val].text;
+        } else { box.style.display = "none"; }
+        autoConfigure();
+    }
+
+    function autoConfigure() {
+        const beatFreq = parseFloat(document.getElementById('brainwaveState').value);
+        const mode = document.querySelector('input[name="device"]:checked').value;
+        const panelOpen = document.getElementById('advancedPanel').classList.contains('show');
+
+        if (!panelOpen) {
+            if (beatFreq >= 14) {
+                document.getElementById('carrierFreq').value = 400;
+                document.getElementById('waveform').value = (mode === 'speakers') ? "square" : "sine";
+            } else {
+                document.getElementById('carrierFreq').value = 150;
+                document.getElementById('waveform').value = "sine";
+            }
+            updateFreqDisplay();
+        }
+    }
+
+    function startEntrainment() {
+        if (isPlaying) stopEntrainment();
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        analyser = audioCtx.createAnalyser();
+
+        baseBeatFreq = parseFloat(document.getElementById('brainwaveState').value);
+        const carrierFreq = parseFloat(document.getElementById('carrierFreq').value);
+        const waveShape = document.getElementById('waveform').value;
+        const volume = parseFloat(document.getElementById('volume').value);
+        const mode = document.querySelector('input[name="device"]:checked').value;
+        const durationMinutes = parseInt(document.getElementById('timer').value);
+        const isHillClimb = document.getElementById('hillClimb').checked;
+
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = volume;
+        
+        // Connect Master -> Analyser -> Output
+        masterGain.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        
+        // ZOOM OUT: Increase FFT Size (Default is 2048. 4096 or 8192 shows more cycles)
+        analyser.fftSize = 4096; 
+
+        if (mode === 'headphones') {
+            osc1 = audioCtx.createOscillator(); osc1.type = waveShape; osc1.frequency.value = carrierFreq;
+            let panL = audioCtx.createStereoPanner(); panL.pan.value = -1;
+
+            osc2 = audioCtx.createOscillator(); osc2.type = waveShape; osc2.frequency.value = carrierFreq + baseBeatFreq;
+            let panR = audioCtx.createStereoPanner(); panR.pan.value = 1;
+
+            osc1.connect(panL); panL.connect(masterGain);
+            osc2.connect(panR); panR.connect(masterGain);
+            osc1.start(); osc2.start();
+        } else {
+            osc1 = audioCtx.createOscillator(); osc1.type = waveShape; osc1.frequency.value = carrierFreq;
+            let pulseGain = audioCtx.createGain(); pulseGain.gain.value = 0.5;
+
+            lfo = audioCtx.createOscillator(); lfo.frequency.value = baseBeatFreq; lfo.type = 'square';
+            lfoAmp = audioCtx.createGain(); lfoAmp.gain.value = 1.0;
+            
+            lfo.connect(lfoAmp); lfoAmp.connect(pulseGain.gain);
+            osc1.connect(pulseGain); pulseGain.connect(masterGain);
+            osc1.start(); lfo.start();
+        }
+
+        isPlaying = true;
+        document.getElementById('live-status').style.display = 'block';
+        document.getElementById('currentHz').innerText = baseBeatFreq + " Hz (Steady)";
+        
+        drawVisualizer();
+
+        if (isHillClimb) {
+            let direction = 1; 
+            let currentBeat = baseBeatFreq;
+            const minBeat = baseBeatFreq; 
+            const maxBeat = baseBeatFreq + 25;
+            const step = 0.5;
+            
+            hillInterval = setInterval(() => {
+                currentBeat += (step * direction);
+                if (currentBeat >= maxBeat) { direction = -1; document.getElementById('climbStatus').innerText = "📉 Recovering..."; }
+                if (currentBeat <= minBeat) { direction = 1; document.getElementById('climbStatus').innerText = "📈 Climbing..."; }
+
+                if (mode === 'headphones') { osc2.frequency.setValueAtTime(carrierFreq + currentBeat, audioCtx.currentTime); }
+                else { lfo.frequency.setValueAtTime(currentBeat, audioCtx.currentTime); }
+                
+                document.getElementById('currentHz').innerText = currentBeat.toFixed(1) + " Hz";
+            }, 500);
+        } else {
+            document.getElementById('climbStatus').innerText = "Maintaining Steady Pace";
+        }
+
+        if (durationMinutes > 0) {
+            let secondsLeft = durationMinutes * 60;
+            const display = document.getElementById('timeLeft');
+            timerInterval = setInterval(() => {
+                secondsLeft--;
+                let m = Math.floor(secondsLeft / 60);
+                let s = secondsLeft % 60;
+                display.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+                if (secondsLeft <= 0) { stopEntrainment(); alert("Session Complete!"); }
+            }, 1000);
+        }
+    }
+
+    function drawVisualizer() {
+        if (!isPlaying) return;
+        drawVisual = requestAnimationFrame(drawVisualizer);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteTimeDomainData(dataArray);
+
+        // Dark Background
+        canvasCtx.fillStyle = 'rgb(10, 10, 10)';
+        canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Wave Line Style
+        canvasCtx.lineWidth = 3; // Thicker line
+        canvasCtx.strokeStyle = 'rgb(0, 255, 127)'; // "Spring Green" - High Contrast
+        canvasCtx.beginPath();
+
+        const sliceWidth = canvas.width * 1.0 / bufferLength;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * canvas.height / 2;
+
+            if (i === 0) canvasCtx.moveTo(x, y);
+            else canvasCtx.lineTo(x, y);
+
+            x += sliceWidth;
+        }
+
+        canvasCtx.lineTo(canvas.width, canvas.height / 2);
+        canvasCtx.stroke();
+    }
+
+    function stopEntrainment() {
+        if (audioCtx) audioCtx.close();
+        if (timerInterval) clearInterval(timerInterval);
+        if (hillInterval) clearInterval(hillInterval);
+        if (drawVisual) cancelAnimationFrame(drawVisual);
+        
+        isPlaying = false;
+        document.getElementById('timeLeft').innerText = "";
+        document.getElementById('live-status').style.display = 'none';
+        
+        canvasCtx.fillStyle = '#111';
+        canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    document.getElementById('volume').addEventListener('input', function() { if(masterGain) masterGain.gain.value = this.value; });
+    
+    updateInfoDisplay(); 
+    updateFreqDisplay();
+</script>
+
 </body>
 </html>
