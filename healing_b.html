@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brainwave Entrainment Studio (Ultimate Edition)</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; background: #f0f2f5; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+        h1 { margin-top: 0; color: #1a1a1a; font-size: 28px; text-align: center; margin-bottom: 25px;}
+        
+        .control-group { margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e9ecef; }
+        label { font-weight: 700; display: block; margin-bottom: 8px; color: #495057; font-size: 0.95rem; }
+        select, input[type=range] { width: 100%; padding: 12px; border: 2px solid #dee2e6; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        
+        /* VISUALIZER */
+        .visualizer-container { background: #000; padding: 10px; border-radius: 12px; border: 1px solid #333; overflow: hidden; }
+        canvas { width: 100%; height: 280px; display: block; border-radius: 8px; }
+
+        /* Info Box & Breathing Guide */
+        .info-box { padding: 20px; border-radius: 12px; margin-top: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 5px solid #ccc; transition: 0.3s; }
+        #breath-guide { width: 60px; height: 60px; border-radius: 50%; background: #38b2ac; opacity: 0.5; display: none; }
+
+        .radio-group { display: flex; gap: 10px; }
+        .radio-option { flex: 1; position: relative; }
+        .radio-option input { opacity: 0; position: absolute; width: 100%; height: 100%; cursor: pointer; }
+        .radio-option div { padding: 15px; text-align: center; background: #fff; border: 2px solid #dee2e6; border-radius: 6px; font-weight: 600; color: #6c757d; }
+        .radio-option input:checked + div { border-color: #007bff; background: #e7f1ff; color: #0056b3; }
+        
+        .advanced-panel { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6; }
+        .advanced-panel.show { display: block; }
+        .value-display { float: right; font-weight: normal; color: #007bff; font-family: monospace; }
+        
+        .btn-group { display: flex; gap: 15px; margin-top: 10px; }
+        button { flex: 1; padding: 18px; font-size: 18px; font-weight: 700; cursor: pointer; border: none; border-radius: 8px; text-transform: uppercase; }
+        button#playBtn { background: linear-gradient(135deg, #28a745, #218838); color: white; }
+        button.stop { background: linear-gradient(135deg, #dc3545, #c82333); color: white; }
+
+        #live-status { margin-top: 20px; padding: 15px; background: #1a1a1a; color: #00ff9d; border-radius: 8px; font-family: monospace; text-align: center; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🧠 Brainwave Entrainment Studio</h1>
+
+    <div class="control-group">
+        <label>1. Output Device</label>
+        <div class="radio-group">
+            <div class="radio-option"><input type="radio" name="device" value="headphones" checked><div>🎧 Headphones</div></div>
+            <div class="radio-option"><input type="radio" name="device" value="speakers"><div>🔊 Speakers</div></div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label>2. Therapeutic Goal & Target Zone</label>
+        <select id="brainwaveState" onchange="updateInfoDisplay()">
+            <option value="healing" selected>Healing Wave (528 Hz) - DNA Repair</option>
+            <option value="2">Delta (2 Hz) - Deep Sleep</option>
+            <option value="6">Theta (6 Hz) - Meditation</option>
+            <option value="10">Alpha (10 Hz) - Relaxed Focus</option>
+            <option value="14">Beta (14 Hz) - Active Thinking</option>
+            <option value="40">Gamma (40 Hz) - Peak Power</option>
+        </select>
+        <div id="infoBox" class="info-box">
+            <div style="flex: 1;"><b id="infoTitle"></b><br><span id="infoText"></span></div>
+            <div id="breath-guide"></div>
+        </div>
+        <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" id="hillClimb">
+            <label for="hillClimb" style="margin-bottom: 0;">⛰️ <b>Hill Climb Mode</b> (Variable Intensity)</label>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label>Live Historical Path & Real-Time Waveform</label>
+        <div class="visualizer-container">
+            <canvas id="visualizer"></canvas>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label>3. Duration <span id="timeLeft" style="float:right; color:#dc3545;"></span></label>
+        <select id="timer">
+            <option value="0">∞ No Limit</option>
+            <option value="5">5 Minutes</option>
+            <option value="15">15 Minutes</option>
+            <option value="30">30 Minutes</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <div onclick="document.getElementById('advancedPanel').classList.toggle('show')" style="text-align:center; cursor:pointer; text-decoration:underline; color:#666;">⚙️ Advanced Audio Settings</div>
+        <div id="advancedPanel" class="advanced-panel">
+            <label>Carrier Pitch <span id="freqDisplay" class="value-display">528 Hz</span></label>
+            <input type="range" id="carrierFreq" min="50" max="900" step="1" value="528" oninput="document.getElementById('freqDisplay').innerText = this.value + ' Hz'">
+            <br><br>
+            <label>⛰️ Hill Climb Height <span id="climbHeightDisplay" class="value-display">+15 Hz</span></label>
+            <input type="range" id="climbHeight" min="5" max="40" step="1" value="15" oninput="document.getElementById('climbHeightDisplay').innerText = '+' + this.value + ' Hz'">
+            <br><br>
+            <label>⚡ Transition Speed <span id="climbSpeedDisplay" class="value-display">Medium</span></label>
+            <input type="range" id="climbSpeed" min="0.1" max="1.5" step="0.1" value="0.5" oninput="updateSpeedLabel(this.value)">
+            <br><br>
+            <label>Wave Shape</label>
+            <select id="waveform">
+                <option value="sine">Sine (Smooth)</option>
+                <option value="square">Square (Hard Pulse)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label>Master Volume</label>
+        <input type="range" id="volume" min="0" max="0.5" step="0.01" value="0.1">
+    </div>
+
+    <div id="live-status">Current Beat: <span id="currentHz">0 Hz</span></div>
+
+    <div class="btn-group">
+        <button id="playBtn" onclick="startEntrainment()">▶ Start Therapy</button>
+        <button class="stop" onclick="stopEntrainment()">■ Stop</button>
+    </div>
+</div>
+
+<script>
+    const presets = {
+        "healing": { title: "Healing Wave", text: "Physical recovery and DNA repair.", carrier: 528, beat: 2, color: "#e6fffa", border: "#38b2ac", wave: "#00f2ff", breathTime: 5000 },
+        "2": { title: "Delta Waves", text: "Deep sleep and restorative healing.", carrier: 150, beat: 2, color: "#e3f2fd", border: "#2196f3", wave: "#00a2ff", breathTime: 10000 },
+        "6": { title: "Theta Waves", text: "Deep meditation and relaxation.", carrier: 150, beat: 6, color: "#f3e5f5", border: "#9c27b0", wave: "#d400ff", breathTime: 8000 },
+        "10": { title: "Alpha Waves", text: "Relaxed focus and stress relief.", carrier: 200, beat: 10, color: "#e8f5e9", border: "#4caf50", wave: "#00ff88", breathTime: 6000 },
+        "14": { title: "Beta Waves", text: "Active thinking and alertness.", carrier: 400, beat: 14, color: "#fff3e0", border: "#ff9800", wave: "#ffcc00", breathTime: 4000 },
+        "40": { title: "Gamma Waves", text: "Peak memory and cognition.", carrier: 400, beat: 40, color: "#ffebee", border: "#f44336", wave: "#ff3300", breathTime: 4000 }
+    };
+
+    let audioCtx, analyser, osc1, osc2, lfo, masterGain, isPlaying = false;
+    let timerInterval, hillInterval, history = [], breathAnimation;
+
+    function updateSpeedLabel(val) {
+        let label = val < 0.3 ? "Slow" : (val > 1.0 ? "Fast" : "Medium");
+        document.getElementById('climbSpeedDisplay').innerText = label;
+    }
+
+    function updateInfoDisplay() {
+        const val = document.getElementById('brainwaveState').value;
+        const data = presets[val];
+        const box = document.getElementById('infoBox');
+        const guide = document.getElementById('breath-guide');
+        box.style.backgroundColor = data.color;
+        box.style.borderLeftColor = data.border;
+        document.getElementById('infoTitle').innerText = data.title;
+        document.getElementById('infoText').innerText = data.text;
+        document.getElementById('carrierFreq').value = data.carrier;
+        document.getElementById('freqDisplay').innerText = data.carrier + " Hz";
+
+        if (breathAnimation) breathAnimation.cancel();
+        guide.style.display = "block";
+        breathAnimation = guide.animate([{ transform: 'scale(1)', opacity: 0.3 }, { transform: 'scale(2.2)', opacity: 0.6 }, { transform: 'scale(1)', opacity: 0.3 }], 
+        { duration: data.breathTime, iterations: Infinity, easing: 'ease-in-out' });
+    }
+
+    function startEntrainment() {
+        if (isPlaying) stopEntrainment();
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 1024;
+
+        const val = document.getElementById('brainwaveState').value;
+        const baseBeat = presets[val].beat;
+        const carrier = parseFloat(document.getElementById('carrierFreq').value);
+        const wave = document.getElementById('waveform').value;
+        const mode = document.querySelector('input[name="device"]:checked').value;
+        const isHill = document.getElementById('hillClimb').checked;
+
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = parseFloat(document.getElementById('volume').value);
+        masterGain.connect(analyser);
+        analyser.connect(audioCtx.destination);
+
+        if (mode === 'headphones') {
+            osc1 = audioCtx.createOscillator(); osc1.type = wave; osc1.frequency.value = carrier;
+            let pL = audioCtx.createStereoPanner(); pL.pan.value = -1;
+            osc2 = audioCtx.createOscillator(); osc2.type = wave; osc2.frequency.value = carrier + baseBeat;
+            let pR = audioCtx.createStereoPanner(); pR.pan.value = 1;
+            osc1.connect(pL).connect(masterGain); osc2.connect(pR).connect(masterGain);
+            osc1.start(); osc2.start();
+        } else {
+            osc1 = audioCtx.createOscillator(); osc1.type = wave; osc1.frequency.value = carrier;
+            let pulseGain = audioCtx.createGain(); pulseGain.gain.value = 0.5;
+            lfo = audioCtx.createOscillator(); lfo.frequency.value = baseBeat; lfo.type = 'square';
+            let lfoAmp = audioCtx.createGain(); lfo.connect(lfoAmp).connect(pulseGain.gain);
+            osc1.connect(pulseGain).connect(masterGain); osc1.start(); lfo.start();
+        }
+
+        isPlaying = true;
+        document.getElementById('live-status').style.display = 'block';
+        drawCombinedVisualizer();
+
+        if (isHill) {
+            let dir = 1; let current = baseBeat;
+            const max = baseBeat + parseFloat(document.getElementById('climbHeight').value);
+            const speed = parseFloat(document.getElementById('climbSpeed').value);
+            hillInterval = setInterval(() => {
+                current += (speed * dir);
+                if (current >= max || current <= baseBeat) dir *= -1;
+                if (mode === 'headphones') osc2.frequency.setTargetAtTime(carrier + current, audioCtx.currentTime, 0.1);
+                else lfo.frequency.setTargetAtTime(current, audioCtx.currentTime, 0.1);
+                document.getElementById('currentHz').innerText = current.toFixed(1) + " Hz";
+            }, 500);
+        } else { document.getElementById('currentHz').innerText = baseBeat + " Hz"; }
+
+        const mins = parseInt(document.getElementById('timer').value);
+        if (mins > 0) {
+            let sec = mins * 60;
+            timerInterval = setInterval(() => {
+                sec--;
+                document.getElementById('timeLeft').innerText = Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2,'0');
+                if (sec <= 0) stopEntrainment();
+            }, 1000);
+        }
+    }
+
+    function drawCombinedVisualizer() {
+        if (!isPlaying) return;
+        requestAnimationFrame(drawCombinedVisualizer);
+        const canvas = document.getElementById("visualizer");
+        const ctx = canvas.getContext("2d");
+        const buffer = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(buffer);
+        analyser.getByteTimeDomainData(dataArray);
+
+        // 1. Update History Buffer (Average Intensity)
+        let sum = 0;
+        for(let i=0; i<buffer; i++) sum += Math.abs(dataArray[i] - 128);
+        history.push(sum / buffer);
+        if (history.length > canvas.width) history.shift();
+
+        // 2. Clear and Set Background
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const preset = presets[document.getElementById('brainwaveState').value];
+
+        // 3. Draw Historical Mountain (Bottom-Up)
+        ctx.beginPath();
+        ctx.fillStyle = preset.wave + "44"; // Translucent fill
+        ctx.strokeStyle = preset.wave;
+        ctx.lineWidth = 1;
+        ctx.moveTo(0, canvas.height); 
+
+        for (let x = 0; x < history.length; x++) {
+            const y = canvas.height - (history[x] * 12); 
+            ctx.lineTo(x, y);
+        }
+        ctx.lineTo(history.length, canvas.height);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 4. Draw Live Oscillator Line (Instantaneous Vibration)
+        ctx.beginPath();
+        ctx.strokeStyle = "#ffffff"; // Bright white for the live line
+        ctx.lineWidth = 2;
+        const sliceWidth = canvas.width / buffer;
+        let lx = 0;
+
+        for (let i = 0; i < buffer; i++) {
+            const v = dataArray[i] / 128.0;
+            // Float it at the top 1/3rd of the canvas
+            const ly = (v * canvas.height / 4) + 40; 
+            if (i === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
+            lx += sliceWidth;
+        }
+        ctx.stroke();
+    }
+
+    function stopEntrainment() {
+        if (audioCtx) audioCtx.close();
+        clearInterval(timerInterval); clearInterval(hillInterval);
+        isPlaying = false; history = [];
+        document.getElementById('live-status').style.display = 'none';
+        document.getElementById('timeLeft').innerText = "";
+    }
+
+    document.getElementById('volume').addEventListener('input', function() {
+        if (isPlaying && masterGain) masterGain.gain.setTargetAtTime(this.value, audioCtx.currentTime, 0.1);
+    });
+
+    window.onload = updateInfoDisplay;
+</script>
+</body>
+</html>
